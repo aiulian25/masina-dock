@@ -2,9 +2,7 @@ version: '3.8'
 
 services:
   masina-dock:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/aiulian25/masina-dock:latest
     container_name: masina-dock
     ports:
       - "5000:5000"
