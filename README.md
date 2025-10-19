@@ -6,6 +6,15 @@
 
 Vehicle Management System is a self-hosted web application designed to help you track and manage all aspects of your vehicle maintenance, expenses, and records. Built with Python Flask and SQLite, this application runs entirely on your own infrastructure, ensuring complete data privacy and control.
 
+
+<img width="1920" height="927" alt="welcome page" src="https://github.com/user-attachments/assets/c347f16d-2411-48d6-a023-2c3857c97f01" />
+<img width="1920" height="927" alt="settings page" src="https://github.com/user-attachments/assets/28e82ae4-30a7-407e-acb9-135d9f725f06" />
+<img width="1920" height="927" alt="login page" src="https://github.com/user-attachments/assets/5b7907d0-ee6e-4b45-810f-14eb6ff7e4d7" />
+<img width="1920" height="927" alt="garage page" src="https://github.com/user-attachments/assets/67f891a3-3a9b-4741-8def-f81de1c90d48" />
+<img width="1920" height="927" alt="detailed view" src="https://github.com/user-attachments/assets/fa431e70-a12c-4139-90aa-c373ab85aba8" />
+
+
+
 ## Features
 
 ### Vehicle Management
@@ -82,25 +91,6 @@ Vehicle Management System is a self-hosted web application designed to help you 
 - Git installed
 - Minimum 1GB RAM
 - 5GB free disk space
-
-### Quick Start
-
-1. Clone the repository
-
-git clone https://github.com/aiulian25/vehicle-management.git
-cd vehicle-managemen
-
-Build and start the application:
-
-Access the application:
-http://localhost:5000
-Create your first account on the registration page.
-
-### Manual Installation (Without Docker)
-
-Clone the repository:
-git clone https://github.com/aiulian25/vehicle-management.git
-
 
 ## Usage
 
@@ -231,10 +221,6 @@ For issues, questions, or feature requests, please open an issue on GitHub.
 
 ## Roadmap
 
-- Mobile native applications
-- API for third-party integrations
-- Cloud sync option
-- Multi-user support with role-based access
 - Advanced reporting and analytics
-- Integration with OBD-II devices
+
 
