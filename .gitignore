@@ -24,3 +24,31 @@ node_modules/
 backups/
 EOF
 *.AppImage
+
+# AppImage build files
+AppDir/
+AppImage/
+appimagetool-x86_64.AppImage*
+*.AppImage
+build-appimage.sh
+masina-dock.desktop
+
+# Debian build files
+deb-build/
+build-deb.sh
+
+# Security scan files
+security-reports/
+security-scan.sh
+trivy-report.json
+
+# Local data and backups
+backups/
+data/
+venv/
+
+# Templates (if not used)
+templates/
+
+# Duplicate README
+README
