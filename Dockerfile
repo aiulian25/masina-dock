@@ -16,11 +16,8 @@ COPY frontend/ /app/frontend/
 
 RUN mkdir -p /app/data /app/uploads/attachments
 
-COPY backend/entrypoint.sh /app/backend/entrypoint.sh
-RUN chmod +x /app/backend/entrypoint.sh
-
 WORKDIR /app/backend
 
 EXPOSE 5000
 
-ENTRYPOINT ["/app/backend/entrypoint.sh"]
+CMD ["python", "app.py"]
