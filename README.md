@@ -6,20 +6,6 @@
 
 Vehicle Management System is a self-hosted web application designed to help you track and manage all aspects of your vehicle maintenance, expenses, and records. Built with Python Flask and SQLite, this application runs entirely on your own infrastructure, ensuring complete data privacy and control.
 
-## Screenshots
-
-### Dashboard Overview
-![Dashboard](screenshots/dashboard.png)
-
-### Service Records Management
-![Service Records](screenshots/service-records.png)
-
-### Fuel Tracking
-![Fuel Tracking](screenshots/fuel-tracking.png)
-
-### Maintenance Reminders
-![Reminders](screenshots/reminders.png)
-
 ## Features
 
 ### Vehicle Management
