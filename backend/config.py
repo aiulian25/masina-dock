@@ -2,7 +2,8 @@ import os
 from datetime import timedelta
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY') or os.urandom(32).hex()
+    # Use environment variable or generate once and save
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'masina-dock-super-secret-key-change-in-production-12345')
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f'sqlite:///{os.environ.get("DATABASE_PATH", "/app/data/masina_dock.db")}'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() == 'true'
