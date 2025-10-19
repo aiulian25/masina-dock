@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Details - Masina-Dock</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="/static/images/logo.svg" alt="Masina-Dock">
+            <h1>Masina-Dock</h1>
+        </div>
+        <nav>
+            <a href="/dashboard" data-translate="dashboard">Dashboard</a>
+            <a href="#" class="active" data-translate="overview">Overview</a>
+            <a href="/service-records" data-translate="service_records">Service Records</a>
+            <a href="/repairs" data-translate="repairs">Repairs</a>
+            <a href="/fuel" data-translate="fuel">Fuel</a>
+            <a href="/taxes" data-translate="taxes">Taxes</a>
+            <a href="/notes" data-translate="notes">Notes</a>
+            <a href="/reminders" data-translate="reminders">Reminders</a>
+            <button class="theme-toggle" onclick="toggleTheme()" data-translate="toggle_theme">Toggle Theme</button>
+            <button class="btn btn-danger" onclick="logout()" data-translate="logout">Logout</button>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px; flex-wrap: wrap; gap: 20px;">
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <img id="vehicle-photo" src="" alt="Vehicle" style="width: 200px; height: 150px; object-fit: cover; border-radius: 8px; display: none;">
+                <div>
+                    <h2 id="vehicle-title"></h2>
+                    <p id="vehicle-info" style="color: var(--text-secondary);"></p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn" onclick="showModal('edit-vehicle-modal')" data-translate="edit_vehicle">Edit Vehicle</button>
+                <button class="btn btn-success" onclick="exportAllData()" data-translate="export_all_data">Export All Data</button>
+                <button class="btn btn-danger" onclick="deleteVehicle()" data-translate="delete_vehicle">Delete Vehicle</button>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label" data-translate="last_odometer_reading">Last Odometer Reading</div>
+                <div class="stat-value" id="last-odometer">0 km</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label" data-translate="total_distance_traveled">Total Distance Travelled</div>
+                <div class="stat-value" id="total-distance">0 km</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label" data-translate="total_cost">Total Cost</div>
+                <div class="stat-value" id="total-cost">£0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label" data-translate="average_fuel_economy">Average Fuel Economy</div>
+                <div class="stat-value" id="avg-fuel-economy">0 L/100km</div>
+            </div>
+        </div>
+        
+        <div class="stats-grid" style="margin-top: 20px;">
+            <div class="stat-card">
+                <div class="stat-label" data-translate="fuel_cost">Fuel Cost</div>
+                <div class="stat-value" id="fuel-cost">£0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label" data-translate="service_cost">Service Cost</div>
+                <div class="stat-value" id="service-cost">£0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label" data-translate="repairs_cost">Repairs Cost</div>
+                <div class="stat-value" id="repairs-cost">£0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label" data-translate="taxes_cost">Taxes Cost</div>
+                <div class="stat-value" id="taxes-cost">£0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label" data-translate="upgrades_cost">Upgrades Cost</div>
+                <div class="stat-value" id="upgrades-cost">£0.00</div>
+            </div>
+        </div>
+        
+        <h3 style="margin-top: 40px;" data-translate="recent_service_records">Recent Service Records</h3>
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th data-translate="date">Date</th>
+                        <th data-translate="odometer">Odometer</th>
+                        <th data-translate="description">Description</th>
+                        <th data-translate="category">Category</th>
+                        <th data-translate="cost">Cost</th>
+                    </tr>
+                </thead>
+                <tbody id="recent-service-tbody"></tbody>
+            </table>
+        </div>
+        
+        <h3 style="margin-top: 40px;" data-translate="recent_fuel_records">Recent Fuel Records</h3>
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th data-translate="date">Date</th>
+                        <th data-translate="odometer">Odometer</th>
+                        <th data-translate="fuel_amount">Amount</th>
+                        <th data-translate="cost">Cost</th>
+                        <th data-translate="economy">Economy</th>
+                    </tr>
+                </thead>
+                <tbody id="recent-fuel-tbody"></tbody>
+            </table>
+        </div>
+        
+        <h3 style="margin-top: 40px;" data-translate="active_reminders">Active Reminders</h3>
+        <div id="reminders-container" style="margin-top: 20px;"></div>
+    </div>
+    
+    <div id="edit-vehicle-modal" class="modal">
+        <div class="modal-content">
+            <h2 data-translate="edit_vehicle">Edit Vehicle</h2>
+            <form id="edit-vehicle-form">
+                <div class="form-group">
+                    <label for="edit-year" data-translate="year">Year</label>
+                    <input type="number" id="edit-year" name="year" required min="1900" max="2099">
+                </div>
+                <div class="form-group">
+                    <label for="edit-make" data-translate="make">Make</label>
+                    <input type="text" id="edit-make" name="make" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-model" data-translate="model">Model</label>
+                    <input type="text" id="edit-model" name="model" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-vin" data-translate="vin">VIN</label>
+                    <input type="text" id="edit-vin" name="vin" maxlength="17">
+                </div>
+                <div class="form-group">
+                    <label for="edit-license-plate" data-translate="license_plate">Registration Number</label>
+                    <input type="text" id="edit-license-plate" name="license_plate">
+                </div>
+                <div class="form-group">
+                    <label for="edit-odometer" data-translate="odometer">Current Odometer</label>
+                    <input type="number" id="edit-odometer" name="odometer" required min="0">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" data-translate="update">Update</button>
+                    <button type="button" class="btn" onclick="closeModal('edit-vehicle-modal')" data-translate="cancel">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="/static/js/translations.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        let currentVehicleId = null;
+        let currentVehicle = null;
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            currentVehicleId = urlParams.get('id') || getSelectedVehicle();
+            
+            if (!currentVehicleId) {
+                alert('Please select a vehicle from the dashboard.');
+                window.location.href = '/dashboard';
+                return;
+            }
+            
+            setSelectedVehicle(currentVehicleId);
+            await loadUserSettings();
+            await loadVehicleDetails();
+            await loadVehicleStats();
+            await loadRecentRecords();
+            await loadReminders(currentVehicleId);
+            
+            setTimeout(() => {
+                translatePage();
+            }, 200);
+        });
+        
+        async function loadVehicleDetails() {
+            try {
+                currentVehicle = await apiRequest(`/api/vehicles/${currentVehicleId}`);
+                
+                document.getElementById('vehicle-title').textContent = 
+                    `${currentVehicle.year} ${currentVehicle.make} ${currentVehicle.model}`;
+                
+                const vinText = currentVehicle.vin || 'N/A';
+                const licenseText = currentVehicle.license_plate || 'N/A';
+                document.getElementById('vehicle-info').textContent = 
+                    `VIN: ${vinText} | License: ${licenseText}`;
+                
+                if (currentVehicle.photo) {
+                    const photoEl = document.getElementById('vehicle-photo');
+                    photoEl.src = currentVehicle.photo;
+                    photoEl.style.display = 'block';
+                }
+                
+                document.getElementById('edit-year').value = currentVehicle.year;
+                document.getElementById('edit-make').value = currentVehicle.make;
+                document.getElementById('edit-model').value = currentVehicle.model;
+                document.getElementById('edit-vin').value = currentVehicle.vin || '';
+                document.getElementById('edit-license-plate').value = currentVehicle.license_plate || '';
+                document.getElementById('edit-odometer').value = currentVehicle.odometer;
+            } catch (error) {
+                console.error('Failed to load vehicle details:', error);
+                alert('Failed to load vehicle details');
+            }
+        }
+        
+        async function loadVehicleStats() {
+            try {
+                const serviceRecords = await apiRequest(`/api/vehicles/${currentVehicleId}/service-records`);
+                const fuelRecords = await apiRequest(`/api/vehicles/${currentVehicleId}/fuel-records`);
+                
+                const settings = JSON.parse(localStorage.getItem('userSettings') || '{"currency":"GBP","unit_system":"imperial"}');
+                const currency = settings.currency || 'GBP';
+                const unitSystem = settings.unit_system || 'imperial';
+                const distanceUnit = unitSystem === 'metric' ? 'km' : 'miles';
+                
+                document.getElementById('last-odometer').textContent = 
+                    `${currentVehicle.odometer.toLocaleString()} ${distanceUnit}`;
+                
+                let totalDistance = 0;
+                if (fuelRecords.length > 0) {
+                    const sortedRecords = fuelRecords.sort((a, b) => a.odometer - b.odometer);
+                    totalDistance = sortedRecords[sortedRecords.length - 1].odometer - sortedRecords[0].odometer;
+                }
+                document.getElementById('total-distance').textContent = 
+                    `${totalDistance.toLocaleString()} ${distanceUnit}`;
+                
+                const fuelCost = fuelRecords.reduce((sum, r) => sum + r.cost, 0);
+                const serviceCost = serviceRecords.filter(r => r.category === 'Maintenance').reduce((sum, r) => sum + r.cost, 0);
+                const repairsCost = serviceRecords.filter(r => r.category === 'Repair').reduce((sum, r) => sum + r.cost, 0);
+                const taxesCost = serviceRecords.filter(r => r.category === 'Tax').reduce((sum, r) => sum + r.cost, 0);
+                const upgradesCost = serviceRecords.filter(r => r.category === 'Upgrade').reduce((sum, r) => sum + r.cost, 0);
+                const totalCost = fuelCost + serviceCost + repairsCost + taxesCost + upgradesCost;
+                
+                document.getElementById('total-cost').textContent = formatCurrency(totalCost, currency);
+                document.getElementById('fuel-cost').textContent = formatCurrency(fuelCost, currency);
+                document.getElementById('service-cost').textContent = formatCurrency(serviceCost, currency);
+                document.getElementById('repairs-cost').textContent = formatCurrency(repairsCost, currency);
+                document.getElementById('taxes-cost').textContent = formatCurrency(taxesCost, currency);
+                document.getElementById('upgrades-cost').textContent = formatCurrency(upgradesCost, currency);
+                
+                const avgEconomy = fuelRecords.filter(r => r.fuel_economy).reduce((sum, r, _, arr) => 
+                    sum + r.fuel_economy / arr.length, 0);
+                const economyUnit = fuelRecords[0]?.unit || 'L/100km';
+                document.getElementById('avg-fuel-economy').textContent = 
+                    `${avgEconomy.toFixed(2)} ${economyUnit}`;
+                
+            } catch (error) {
+                console.error('Failed to load vehicle stats:', error);
+            }
+        }
+        
+        async function loadRecentRecords() {
+            try {
+                const serviceRecords = await apiRequest(`/api/vehicles/${currentVehicleId}/service-records`);
+                const fuelRecords = await apiRequest(`/api/vehicles/${currentVehicleId}/fuel-records`);
+                
+                const settings = JSON.parse(localStorage.getItem('userSettings') || '{"currency":"GBP"}');
+                const currency = settings.currency || 'GBP';
+                
+                const recentService = serviceRecords.slice(0, 5);
+                const serviceTbody = document.getElementById('recent-service-tbody');
+                if (recentService.length === 0) {
+                    serviceTbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No service records</td></tr>';
+                } else {
+                    serviceTbody.innerHTML = recentService.map(r => `
+                        <tr>
+                            <td>${formatDate(r.date)}</td>
+                            <td>${r.odometer.toLocaleString()}</td>
+                            <td>${r.description}</td>
+                            <td>${r.category || 'N/A'}</td>
+                            <td>${formatCurrency(r.cost, currency)}</td>
+                        </tr>
+                    `).join('');
+                }
+                
+                const recentFuel = fuelRecords.slice(0, 5);
+                const fuelTbody = document.getElementById('recent-fuel-tbody');
+                if (recentFuel.length === 0) {
+                    fuelTbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No fuel records</td></tr>';
+                } else {
+                    fuelTbody.innerHTML = recentFuel.map(r => `
+                        <tr>
+                            <td>${formatDate(r.date)}</td>
+                            <td>${r.odometer.toLocaleString()}</td>
+                            <td>${r.fuel_amount.toFixed(2)}</td>
+                            <td>${formatCurrency(r.cost, currency)}</td>
+                            <td>${r.fuel_economy ? r.fuel_economy.toFixed(2) : 'N/A'} ${r.unit}</td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load recent records:', error);
+            }
+        }
+        
+        function exportAllData() {
+            if (currentVehicleId) {
+                exportAllVehicleData(currentVehicleId);
+            }
+        }
+        
+        async function deleteVehicle() {
+            if (!confirm('Are you sure you want to delete this vehicle? This will delete all associated records.')) {
+                return;
+            }
+            
+            try {
+                await apiRequest(`/api/vehicles/${currentVehicleId}`, {
+                    method: 'DELETE'
+                });
+                clearSelectedVehicle();
+                alert('Vehicle deleted successfully.');
+                window.location.href = '/dashboard';
+            } catch (error) {
+                alert('Failed to delete vehicle: ' + error.message);
+            }
+        }
+        
+        document.getElementById('edit-vehicle-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                year: parseInt(document.getElementById('edit-year').value),
+                make: document.getElementById('edit-make').value,
+                model: document.getElementById('edit-model').value,
+                vin: document.getElementById('edit-vin').value || null,
+                license_plate: document.getElementById('edit-license-plate').value || null,
+                odometer: parseInt(document.getElementById('edit-odometer').value)
+            };
+            
+            try {
+                await apiRequest(`/api/vehicles/${currentVehicleId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(formData)
+                });
+                closeModal('edit-vehicle-modal');
+                await loadVehicleDetails();
+                await loadVehicleStats();
+                alert('Vehicle updated successfully.');
+            } catch (error) {
+                alert('Failed to update vehicle: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

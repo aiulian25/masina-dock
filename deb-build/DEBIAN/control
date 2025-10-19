@@ -1,0 +1,11 @@
+Package: masina-dock
+Version: 1.0.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: Masina-Dock Developer <dev@masina-dock.local>
+Description: Vehicle Maintenance Records and Fuel Mileage Tracker
+ A comprehensive vehicle maintenance and fuel economy tracking application.
+ Features include service record management, fuel economy tracking, maintenance
+ reminders, and expense analytics with support for multiple vehicles.
+Depends: python3 (>= 3.9), python3-pip

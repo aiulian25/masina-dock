@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reminders - Masina-Dock</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="/static/images/logo.svg" alt="Masina-Dock">
+            <h1>Masina-Dock</h1>
+        </div>
+        <nav>
+            <a href="/dashboard" data-translate="dashboard">Dashboard</a>
+            <a href="#" onclick="navigateToVehicle(); return false;" data-translate="overview">Overview</a>
+            <a href="/service-records" data-translate="service_records">Service Records</a>
+            <a href="/repairs" data-translate="repairs">Repairs</a>
+            <a href="/fuel" data-translate="fuel">Fuel</a>
+            <a href="/taxes" data-translate="taxes">Taxes</a>
+            <a href="/notes" data-translate="notes">Notes</a>
+            <a href="/reminders" class="active" data-translate="reminders">Reminders</a>
+            <button class="theme-toggle" onclick="toggleTheme()" data-translate="toggle_theme">Toggle Theme</button>
+            <button class="btn btn-danger" onclick="logout()" data-translate="logout">Logout</button>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 id="vehicle-title" data-translate="reminders">Reminders</h2>
+            <button class="btn" onclick="navigateToVehicle()" data-translate="back_to_vehicle">Back to Vehicle</button>
+        </div>
+        
+        <button class="btn btn-success" onclick="showModal('add-reminder-modal')" data-translate="add_reminder">+ Add Reminder</button>
+        
+        <div class="card" style="margin-top: 20px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th data-translate="description">Description</th>
+                        <th data-translate="urgency">Urgency</th>
+                        <th data-translate="due_date">Due Date</th>
+                        <th data-translate="due_odometer">Due Odometer</th>
+                        <th data-translate="notes">Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="reminders-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div id="add-reminder-modal" class="modal">
+        <div class="modal-content">
+            <h2 data-translate="add_reminder">Add Reminder</h2>
+            <form id="add-reminder-form">
+                <div class="form-group">
+                    <label for="reminder-description" data-translate="description">Description</label>
+                    <input type="text" id="reminder-description" name="description" required>
+                </div>
+                <div class="form-group">
+                    <label for="reminder-urgency" data-translate="urgency">Urgency</label>
+                    <select id="reminder-urgency" name="urgency">
+                        <option value="not_urgent">Not Urgent</option>
+                        <option value="moderate">Moderate</option>
+                        <option value="urgent">Urgent</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="reminder-date" data-translate="due_date">Due Date (Optional)</label>
+                    <input type="date" id="reminder-date" name="due_date">
+                </div>
+                <div class="form-group">
+                    <label for="reminder-odometer" data-translate="due_odometer">Due Odometer (Optional)</label>
+                    <input type="number" id="reminder-odometer" name="due_odometer" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="reminder-notes" data-translate="notes">Notes</label>
+                    <textarea id="reminder-notes" name="notes" rows="3"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" data-translate="add_record">Add Reminder</button>
+                    <button type="button" class="btn" onclick="closeModal('add-reminder-modal')" data-translate="cancel">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="/static/js/translations.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        let currentVehicleId = null;
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentVehicleId = getSelectedVehicle();
+            
+            if (!currentVehicleId) {
+                alert('Please select a vehicle from the dashboard.');
+                window.location.href = '/dashboard';
+                return;
+            }
+            
+            await loadVehicleInfo();
+            await loadRemindersData();
+            
+            setTimeout(() => {
+                translatePage();
+            }, 200);
+        });
+        
+        async function loadVehicleInfo() {
+            try {
+                const vehicle = await apiRequest(`/api/vehicles/${currentVehicleId}`);
+                const settings = JSON.parse(localStorage.getItem('userSettings') || '{"language":"en"}');
+                const lang = settings.language || 'en';
+                
+                if (lang === 'ro') {
+                    document.getElementById('vehicle-title').textContent = 
+                        `${vehicle.year} ${vehicle.make} ${vehicle.model} - Memento-uri`;
+                } else {
+                    document.getElementById('vehicle-title').textContent = 
+                        `${vehicle.year} ${vehicle.make} ${vehicle.model} - Reminders`;
+                }
+            } catch (error) {
+                console.error('Failed to load vehicle info:', error);
+            }
+        }
+        
+        function navigateToVehicle() {
+            if (currentVehicleId) {
+                window.location.href = `/vehicle-detail?id=${currentVehicleId}`;
+            } else {
+                window.location.href = '/dashboard';
+            }
+        }
+        
+        async function loadRemindersData() {
+            try {
+                const reminders = await apiRequest(`/api/vehicles/${currentVehicleId}/reminders`);
+                displayRemindersTable(reminders);
+            } catch (error) {
+                console.error('Failed to load reminders:', error);
+            }
+        }
+        
+        function displayRemindersTable(reminders) {
+            const tbody = document.getElementById('reminders-tbody');
+            if (!tbody) return;
+            
+            if (reminders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No reminders</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = reminders.map(r => `
+                <tr class="urgency-${r.urgency}">
+                    <td>${r.description}</td>
+                    <td>${r.urgency}</td>
+                    <td>${r.due_date ? formatDate(r.due_date) : '-'}</td>
+                    <td>${r.due_odometer ? r.due_odometer.toLocaleString() : '-'}</td>
+                    <td>${r.notes || ''}</td>
+                </tr>
+            `).join('');
+        }
+        
+        document.getElementById('add-reminder-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                description: document.getElementById('reminder-description').value,
+                urgency: document.getElementById('reminder-urgency').value,
+                due_date: document.getElementById('reminder-date').value || null,
+                due_odometer: document.getElementById('reminder-odometer').value || null,
+                notes: document.getElementById('reminder-notes').value || null,
+                recurring: false
+            };
+            
+            try {
+                await apiRequest(`/api/vehicles/${currentVehicleId}/reminders`, {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+                closeModal('add-reminder-modal');
+                await loadRemindersData();
+                document.getElementById('add-reminder-form').reset();
+            } catch (error) {
+                alert('Failed to add reminder: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

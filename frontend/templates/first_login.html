@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Credentials - Masina-Dock</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1>Masina-Dock</h1>
+            <h2>Update Your Credentials</h2>
+            <p style="color: var(--text-secondary); text-align: center; margin-bottom: 20px;">
+                For security reasons, you must change your username, email, and password before continuing.
+            </p>
+            
+            <form id="update-credentials-form">
+                <div class="form-group">
+                    <label for="new-username">New Username</label>
+                    <input type="text" id="new-username" name="username" required minlength="3">
+                </div>
+                <div class="form-group">
+                    <label for="new-email">New Email</label>
+                    <input type="email" id="new-email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-password">New Password</label>
+                    <input type="password" id="new-password" name="password" required minlength="8">
+                    <small style="color: var(--text-secondary);">
+                        Must be at least 8 characters with uppercase, lowercase, and numbers
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label for="confirm-password">Confirm New Password</label>
+                    <input type="password" id="confirm-password" name="confirm_password" required minlength="8">
+                </div>
+                <button type="submit" class="btn btn-success" style="width: 100%;">Update Credentials</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="/static/js/app.js"></script>
+    <script>
+        document.getElementById('update-credentials-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (newPassword !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            const formData = {
+                username: document.getElementById('new-username').value,
+                email: document.getElementById('new-email').value,
+                password: newPassword
+            };
+            
+            try {
+                const response = await fetch('/api/auth/update-credentials', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('Credentials updated successfully! Please login with your new credentials.');
+                    window.location.href = '/login';
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to update credentials'));
+                }
+            } catch (error) {
+                alert('Failed to update credentials: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
+V

@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  masina-dock:
+    build: .
+    container_name: masina-dock
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-default-secret-key-change-in-production}
+      - DATABASE_PATH=/app/data/masina_dock.db
+      - DISABLE_SIGNUPS=${DISABLE_SIGNUPS:-False}
+      - ENABLE_EMAIL_VERIFICATION=${ENABLE_EMAIL_VERIFICATION:-False}
+      - ENABLE_2FA=${ENABLE_2FA:-True}
+      - MAIL_SERVER=${MAIL_SERVER:-smtp.gmail.com}
+      - MAIL_PORT=${MAIL_PORT:-587}
+      - MAIL_USE_TLS=${MAIL_USE_TLS:-True}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_DEFAULT_SENDER=${MAIL_DEFAULT_SENDER:-noreply@masinadock.local}
+    restart: unless-stopped
+    networks:
+      - masina-network
+
+networks:
+  masina-network:
+    driver: bridge

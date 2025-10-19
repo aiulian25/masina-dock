@@ -1,0 +1,30 @@
+cd ~/masina-dock
+
+cat > .trivy.yaml << 'EOF'
+# Trivy configuration file
+
+# Severity levels to report
+severity:
+  - CRITICAL
+  - HIGH
+  - MEDIUM
+
+# Vulnerability database
+db:
+  repository: ghcr.io/aquasecurity/trivy-db
+
+# Output format
+format: table
+
+# Ignore unfixed vulnerabilities
+ignore-unfixed: false
+
+# Timeout
+timeout: 5m0s
+
+# Cache directory
+cache:
+  dir: ~/.cache/trivy
+EOF
+
+echo "Trivy configuration created!"

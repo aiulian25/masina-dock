@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Masina-Dock</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .auth-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .auth-card h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+        .auth-card h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1>Masina-Dock</h1>
+            <h2>Register for Masina-Dock</h2>
+            
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required minlength="3" autofocus>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required minlength="8">
+                    <small style="color: var(--text-secondary);">
+                        Must be at least 8 characters with uppercase, lowercase, and numbers
+                    </small>
+                </div>
+                <button type="submit" class="btn btn-success" style="width: 100%;">Register</button>
+            </form>
+            
+            <p style="text-align: center; margin-top: 20px;">
+                Already have an account? <a href="/login" style="color: var(--primary);">Login</a>
+            </p>
+        </div>
+    </div>
+    
+    <div id="custom-alert-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <p id="alert-message" style="margin: 20px 0; font-size: 16px;"></p>
+            <button class="btn btn-success" onclick="closeCustomAlert()" style="width: 100px;">OK</button>
+        </div>
+    </div>
+    
+    <script src="/static/js/app.js"></script>
+    <script>
+        function showCustomAlert(message, redirectUrl = null) {
+            document.getElementById('alert-message').textContent = message;
+            document.getElementById('custom-alert-modal').classList.add('active');
+            
+            if (redirectUrl) {
+                setTimeout(() => {
+                    window.location.href = redirectUrl;
+                }, 2000);
+            }
+        }
+        
+        function closeCustomAlert() {
+            document.getElementById('custom-alert-modal').classList.remove('active');
+        }
+        
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ username, email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showCustomAlert('Registration successful! Please login.', '/login');
+                } else {
+                    showCustomAlert('Error: ' + (data.error || 'Registration failed'));
+                }
+            } catch (error) {
+                showCustomAlert('Registration failed: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

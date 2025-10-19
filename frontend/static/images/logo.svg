@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="carGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#676f9d;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#5865f2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <circle cx="100" cy="100" r="95" fill="url(#carGradient)" opacity="0.1"/>
+  
+  <path d="M 50 120 L 60 90 L 140 90 L 150 120 Z" fill="url(#carGradient)" stroke="#ffffff" stroke-width="3"/>
+  
+  <rect x="65" y="95" width="25" height="20" fill="#ffffff" opacity="0.7" rx="2"/>
+  <rect x="110" y="95" width="25" height="20" fill="#ffffff" opacity="0.7" rx="2"/>
+  
+  <circle cx="70" cy="125" r="12" fill="#2d3250" stroke="#ffffff" stroke-width="3"/>
+  <circle cx="70" cy="125" r="6" fill="#676f9d"/>
+  
+  <circle cx="130" cy="125" r="12" fill="#2d3250" stroke="#ffffff" stroke-width="3"/>
+  <circle cx="130" cy="125" r="6" fill="#676f9d"/>
+  
+  <path d="M 50 120 L 45 120 L 45 110 L 50 110 Z" fill="url(#carGradient)"/>
+  <path d="M 150 120 L 155 120 L 155 110 L 150 110 Z" fill="url(#carGradient)"/>
+  
+  <g transform="translate(100, 155)">
+    <path d="M -25 -5 L -15 5 L -5 -5" stroke="#676f9d" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M 5 -5 L 15 5 L 25 -5" stroke="#676f9d" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Masina-Dock
+Comment=Vehicle Maintenance Records and Fuel Mileage Tracker
+Exec=AppRun
+Icon=masina-dock
+Categories=Utility;
+Terminal=false
+StartupWMClass=masina-dock

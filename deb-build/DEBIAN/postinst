@@ -1,0 +1,6 @@
+#!/bin/bash
+cd /opt/masina-dock
+pip3 install -r backend/requirements.txt --target=/opt/masina-dock/pylibs
+chmod +x /usr/bin/masina-dock
+echo "Masina-Dock installed successfully!"
+echo "Run 'masina-dock' to start the application"

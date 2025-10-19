@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablou de bord - Masina-Dock</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="/static/images/logo.svg" alt="Masina-Dock">
+            <h1>Masina-Dock</h1>
+        </div>
+        <nav>
+            <a href="/dashboard" class="active" data-translate="dashboard">Tablou de bord</a>
+            <button class="theme-toggle" onclick="toggleTheme()" data-translate="toggle_theme">Schimba tema</button>
+            <a href="/settings" class="btn" data-translate="settings">Setari</a>
+            <button class="btn btn-danger" onclick="logout()" data-translate="logout">Deconectare</button>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <h2 data-translate="your_garage">Garajul tau</h2>
+        <button class="btn btn-success" onclick="showModal('add-vehicle-modal')" data-translate="add_vehicle">+ Adauga vehicul</button>
+        
+        <div id="vehicles-container" class="vehicle-grid"></div>
+    </div>
+    
+    <div id="add-vehicle-modal" class="modal">
+        <div class="modal-content">
+            <h2 data-translate="add_vehicle">Adauga vehicul</h2>
+            <form id="add-vehicle-form" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="photo" data-translate="vehicle_photo">Fotografie vehicul</label>
+                    <input type="file" id="photo" name="photo" accept="image/*">
+                    <div id="photo-preview" style="margin-top: 10px;"></div>
+                </div>
+                <div class="form-group">
+                    <label for="year" data-translate="year">An</label>
+                    <input type="number" id="year" name="year" required min="1900" max="2099">
+                </div>
+                <div class="form-group">
+                    <label for="make" data-translate="make">Marca</label>
+                    <input type="text" id="make" name="make" required>
+                </div>
+                <div class="form-group">
+                    <label for="model" data-translate="model">Model</label>
+                    <input type="text" id="model" name="model" required>
+                </div>
+                <div class="form-group">
+                    <label for="vin" data-translate="vin">VIN (Optional)</label>
+                    <input type="text" id="vin" name="vin" maxlength="17">
+                </div>
+                <div class="form-group">
+                    <label for="license_plate" data-translate="license_plate">Numar inmatriculare (Optional)</label>
+                    <input type="text" id="license_plate" name="license_plate">
+                </div>
+                <div class="form-group">
+                    <label for="odometer" data-translate="odometer">Kilometraj curent</label>
+                    <input type="number" id="odometer" name="odometer" required min="0">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" data-translate="add_vehicle">Adauga vehicul</button>
+                    <button type="button" class="btn" onclick="closeModal('add-vehicle-modal')" data-translate="cancel">Anuleaza</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="/static/js/translations.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadVehicles();
+        });
+        
+        document.getElementById('photo').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('photo-preview').innerHTML = 
+                        `<img src="${e.target.result}" style="max-width: 200px; border-radius: 8px;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        document.getElementById('add-vehicle-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            let photoUrl = null;
+            const photoFile = document.getElementById('photo').files[0];
+            
+            if (photoFile) {
+                const formData = new FormData();
+                formData.append('photo', photoFile);
+                
+                try {
+                    const response = await fetch('/api/upload/photo', {
+                        method: 'POST',
+                        credentials: 'include',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    photoUrl = data.photo_url;
+                } catch (error) {
+                    console.error('Photo upload failed:', error);
+                }
+            }
+            
+            const vehicleData = {
+                year: parseInt(document.getElementById('year').value),
+                make: document.getElementById('make').value,
+                model: document.getElementById('model').value,
+                vin: document.getElementById('vin').value || null,
+                license_plate: document.getElementById('license_plate').value || null,
+                odometer: parseInt(document.getElementById('odometer').value),
+                photo: photoUrl
+            };
+            
+            await addVehicle(vehicleData);
+        });
+    </script>
+</body>
+</html>

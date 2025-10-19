@@ -1,0 +1,3 @@
+#!/bin/bash
+cd /opt/masina-dock
+PYTHONPATH=/opt/masina-dock/pylibs:$PYTHONPATH python3 backend/app.py

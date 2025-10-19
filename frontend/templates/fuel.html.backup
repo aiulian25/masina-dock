@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combustibil - Masina-Dock</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="/static/images/logo.svg" alt="Masina-Dock">
+            <h1>Masina-Dock</h1>
+        </div>
+        <nav>
+            <a href="/dashboard" data-translate="dashboard">Dashboard</a>
+            <a href="#" onclick="navigateToVehicle(); return false;" data-translate="overview">Overview</a>
+            <a href="/service-records" data-translate="service_records">Service Records</a>
+            <a href="/repairs" data-translate="repairs">Repairs</a>
+            <a href="/fuel" class="active" data-translate="fuel">Fuel</a>
+            <a href="/taxes" data-translate="taxes">Taxes</a>
+            <a href="/notes" data-translate="notes">Notes</a>
+            <a href="/reminders" data-translate="reminders">Reminders</a>
+            <button class="theme-toggle" onclick="toggleTheme()" data-translate="toggle_theme">Toggle Theme</button>
+            <button class="btn btn-danger" onclick="logout()" data-translate="logout">Logout</button>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 id="vehicle-title" data-translate="fuel">Fuel Records</h2>
+            <button class="btn" onclick="navigateToVehicle()" data-translate="back_to_vehicle">Back to Vehicle</button>
+        </div>
+        
+        <button class="btn btn-success" onclick="showModal('add-fuel-modal')" data-translate="add_fuel_record">+ Add Fuel Record</button>
+        <button class="btn" onclick="exportFuelRecords()" data-translate="export_csv">Export CSV</button>
+        
+        <div class="stats-grid" style="margin: 20px 0;">
+            <div class="stat-card">
+                <div class="stat-label" data-translate="total_fuel_cost">Total Fuel Cost</div>
+                <div class="stat-value" id="total-fuel-cost">0.00 lei</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label" data-translate="average_fuel_economy">Average Fuel Economy</div>
+                <div class="stat-value" id="avg-fuel-economy">0</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th data-translate="date">Date</th>
+                        <th data-translate="odometer">Odometer</th>
+                        <th data-translate="fuel_amount">Fuel Amount</th>
+                        <th data-translate="cost">Cost</th>
+                        <th data-translate="distance">Distance</th>
+                        <th data-translate="economy">Economy</th>
+                        <th data-translate="attachment">Attachment</th>
+                    </tr>
+                </thead>
+                <tbody id="fuel-records-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div id="add-fuel-modal" class="modal">
+        <div class="modal-content">
+            <h2 data-translate="add_fuel_record">Add Fuel Record</h2>
+            <form id="add-fuel-form" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="fuel-date" data-translate="date">Date</label>
+                    <input type="date" id="fuel-date" name="date" required>
+                </div>
+                <div class="form-group">
+                    <label for="fuel-odometer" data-translate="odometer">Odometer</label>
+                    <input type="number" id="fuel-odometer" name="odometer" required min="0">
+                </div>
+                <div class="form-group">
+                    <label for="fuel-amount" data-translate="fuel_amount">Fuel Amount</label>
+                    <input type="number" id="fuel-amount" name="fuel_amount" step="0.01" required min="0">
+                </div>
+                <div class="form-group">
+                    <label for="fuel-unit">Unit</label>
+                    <select id="fuel-unit" name="unit">
+                        <option value="MPG">MPG (US)</option>
+                        <option value="UK MPG">UK MPG</option>
+                        <option value="L/100KM">L/100KM</option>
+                        <option value="KM/L">KM/L</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="fuel-cost" data-translate="cost">Total Cost</label>
+                    <input type="number" id="fuel-cost" name="cost" step="0.01" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="fuel-notes" data-translate="notes">Notes</label>
+                    <textarea id="fuel-notes" name="notes" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="fuel-attachment" data-translate="optional">Receipt (Optional)</label>
+                    <input type="file" id="fuel-attachment" name="attachment" accept=".pdf,.png,.jpg,.jpeg,.txt">
+                    <small data-translate="supported_files">Supported: PDF, Images, Text</small>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" data-translate="add_record">Add Record</button>
+                    <button type="button" class="btn" onclick="closeModal('add-fuel-modal')" data-translate="cancel">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="/static/js/translations.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        let currentVehicleId = null;
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentVehicleId = getSelectedVehicle();
+            
+            if (!currentVehicleId) {
+                alert('Va rugam selectati un vehicul din tabloul de bord.');
+                window.location.href = '/dashboard';
+                return;
+            }
+            
+            await loadVehicleInfo();
+            await loadFuelRecords(currentVehicleId);
+        });
+        
+        async function loadVehicleInfo() {
+            try {
+                const vehicle = await apiRequest(`/api/vehicles/${currentVehicleId}`);
+                document.getElementById('vehicle-title').textContent = 
+                    `${vehicle.year} ${vehicle.make} ${vehicle.model} - Combustibil`;
+            } catch (error) {
+                console.error('Failed to load vehicle info:', error);
+            }
+        }
+        
+        function navigateToVehicle() {
+            if (currentVehicleId) {
+                window.location.href = `/vehicle-detail?id=${currentVehicleId}`;
+            } else {
+                window.location.href = '/dashboard';
+            }
+        }
+        
+        function exportFuelRecords() {
+            if (currentVehicleId) {
+                exportData('fuel_records', currentVehicleId);
+            }
+        }
+        
+        document.getElementById('add-fuel-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            let attachmentPath = null;
+            const attachmentFile = document.getElementById('fuel-attachment').files[0];
+            
+            if (attachmentFile) {
+                const formData = new FormData();
+                formData.append('attachment', attachmentFile);
+                
+                try {
+                    const response = await fetch('/api/upload/attachment', {
+                        method: 'POST',
+                        credentials: 'include',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    attachmentPath = 'attachment:' + data.file_path;
+                } catch (error) {
+                    console.error('Attachment upload failed:', error);
+                }
+            }
+            
+            const formData = {
+                date: document.getElementById('fuel-date').value,
+                odometer: parseInt(document.getElementById('fuel-odometer').value),
+                fuel_amount: parseFloat(document.getElementById('fuel-amount').value),
+                unit: document.getElementById('fuel-unit').value,
+                cost: parseFloat(document.getElementById('fuel-cost').value) || 0,
+                notes: attachmentPath || document.getElementById('fuel-notes').value || null
+            };
+            
+            try {
+                await apiRequest(`/api/vehicles/${currentVehicleId}/fuel-records`, {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+                closeModal('add-fuel-modal');
+                await loadFuelRecords(currentVehicleId);
+                document.getElementById('add-fuel-form').reset();
+            } catch (error) {
+                alert('Adaugarea inregistrarii a esuat: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

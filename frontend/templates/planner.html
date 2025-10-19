@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planner - Masina-Dock</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="/static/images/logo.svg" alt="Masina-Dock">
+            <h1>Masina-Dock</h1>
+        </div>
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/vehicles">Vehicles</a>
+            <a href="/planner" class="active">Planner</a>
+            <button class="theme-toggle" onclick="toggleTheme()">🌙/☀️</button>
+            <button class="btn btn-danger" onclick="logout()">Logout</button>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <h2>Maintenance Planner</h2>
+        <p>Select a vehicle to view and manage maintenance tasks</p>
+        
+        <div class="form-group" style="max-width: 400px;">
+            <label for="vehicle-select">Select Vehicle</label>
+            <select id="vehicle-select" onchange="loadTodosForVehicle(this.value)">
+                <option value="">-- Select a vehicle --</option>
+            </select>
+        </div>
+        
+        <div id="planner-content" style="display: none;">
+            <button class="btn btn-success" onclick="showModal('add-todo-modal')">+ Add Task</button>
+            
+            <div class="kanban-board">
+                <div class="kanban-column">
+                    <h3>Planned</h3>
+                    <div id="todos-planned"></div>
+                </div>
+                <div class="kanban-column">
+                    <h3>Doing</h3>
+                    <div id="todos-doing"></div>
+                </div>
+                <div class="kanban-column">
+                    <h3>Testing</h3>
+                    <div id="todos-testing"></div>
+                </div>
+                <div class="kanban-column">
+                    <h3>Done</h3>
+                    <div id="todos-done"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="add-todo-modal" class="modal">
+        <div class="modal-content">
+            <h2>Add New Task</h2>
+            <form id="add-todo-form">
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <input type="text" id="description" name="description" required>
+                </div>
+                <div class="form-group">
+                    <label for="cost">Estimated Cost</label>
+                    <input type="number" id="cost" name="cost" step="0.01" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="priority">Priority</label>
+                    <select id="priority" name="priority">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="type">Type</label>
+                    <input type="text" id="type" name="type" placeholder="e.g., Oil Change, Brake Service">
+                </div>
+                <div class="form-group">
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" name="notes" rows="3"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success">Add Task</button>
+                    <button type="button" class="btn" onclick="closeModal('add-todo-modal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="/static/js/app.js"></script>
+    <script>
+        let currentVehicleId = null;
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const vehicles = await apiRequest('/api/vehicles');
+            const select = document.getElementById('vehicle-select');
+            vehicles.forEach(v => {
+                const option = document.createElement('option');
+                option.value = v.id;
+                option.textContent = `${v.year} ${v.make} ${v.model}`;
+                select.appendChild(option);
+            });
+        });
+        
+        async function loadTodosForVehicle(vehicleId) {
+            if (!vehicleId) {
+                document.getElementById('planner-content').style.display = 'none';
+                return;
+            }
+            currentVehicleId = vehicleId;
+            document.getElementById('planner-content').style.display = 'block';
+            await loadTodos(vehicleId);
+        }
+        
+        document.getElementById('add-todo-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentVehicleId) {
+                alert('Please select a vehicle first');
+                return;
+            }
+            
+            const formData = {
+                description: document.getElementById('description').value,
+                cost: parseFloat(document.getElementById('cost').value) || 0,
+                priority: document.getElementById('priority').value,
+                type: document.getElementById('type').value || null,
+                notes: document.getElementById('notes').value || null,
+                status: 'planned'
+            };
+            
+            try {
+                await apiRequest(`/api/vehicles/${currentVehicleId}/todos`, {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+                closeModal('add-todo-modal');
+                await loadTodos(currentVehicleId);
+                document.getElementById('add-todo-form').reset();
+            } catch (error) {
+                alert('Failed to add task: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

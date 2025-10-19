@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repairs - Masina-Dock</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="/static/images/logo.svg" alt="Masina-Dock">
+            <h1>Masina-Dock</h1>
+        </div>
+        <nav>
+            <a href="/dashboard" data-translate="dashboard">Dashboard</a>
+            <a href="#" onclick="navigateToVehicle(); return false;" data-translate="overview">Overview</a>
+            <a href="/service-records" data-translate="service_records">Service Records</a>
+            <a href="/repairs" class="active" data-translate="repairs">Repairs</a>
+            <a href="/fuel" data-translate="fuel">Fuel</a>
+            <a href="/taxes" data-translate="taxes">Taxes</a>
+            <a href="/notes" data-translate="notes">Notes</a>
+            <a href="/reminders" data-translate="reminders">Reminders</a>
+            <button class="theme-toggle" onclick="toggleTheme()" data-translate="toggle_theme">Toggle Theme</button>
+            <button class="btn btn-danger" onclick="logout()" data-translate="logout">Logout</button>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 id="vehicle-title" data-translate="repairs">Repairs</h2>
+            <button class="btn" onclick="navigateToVehicle()" data-translate="back_to_vehicle">Back to Vehicle</button>
+        </div>
+        
+        <button class="btn btn-success" onclick="showModal('add-repair-modal')" data-translate="add_repair">+ Add Repair</button>
+        
+        <div class="card" style="margin-top: 20px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th data-translate="date">Date</th>
+                        <th data-translate="odometer">Odometer</th>
+                        <th data-translate="description">Description</th>
+                        <th data-translate="cost">Cost</th>
+                        <th data-translate="notes">Notes</th>
+                        <th data-translate="attachment">Attachment</th>
+                    </tr>
+                </thead>
+                <tbody id="repairs-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div id="add-repair-modal" class="modal">
+        <div class="modal-content">
+            <h2 data-translate="add_repair">Add Repair</h2>
+            <form id="add-repair-form" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="repair-date" data-translate="date">Date</label>
+                    <input type="date" id="repair-date" name="date" required>
+                </div>
+                <div class="form-group">
+                    <label for="repair-odometer" data-translate="odometer">Odometer</label>
+                    <input type="number" id="repair-odometer" name="odometer" required min="0">
+                </div>
+                <div class="form-group">
+                    <label for="repair-description" data-translate="description">Description</label>
+                    <input type="text" id="repair-description" name="description" required>
+                </div>
+                <div class="form-group">
+                    <label for="repair-cost" data-translate="cost">Cost</label>
+                    <input type="number" id="repair-cost" name="cost" step="0.01" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="repair-notes" data-translate="notes">Notes</label>
+                    <textarea id="repair-notes" name="notes" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="repair-attachment" data-translate="optional">Attachment (Optional)</label>
+                    <input type="file" id="repair-attachment" name="attachment" accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx,.xls,.xlsx">
+                    <small data-translate="supported_files">Supported: PDF, Images, Text, Word, Excel</small>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" data-translate="add_record">Add Record</button>
+                    <button type="button" class="btn" onclick="closeModal('add-repair-modal')" data-translate="cancel">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="/static/js/translations.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        let currentVehicleId = null;
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentVehicleId = getSelectedVehicle();
+            
+            if (!currentVehicleId) {
+                alert('Please select a vehicle from the dashboard.');
+                window.location.href = '/dashboard';
+                return;
+            }
+            
+            await loadVehicleInfo();
+            await loadRepairs();
+            
+            setTimeout(() => {
+                translatePage();
+            }, 200);
+        });
+        
+        async function loadVehicleInfo() {
+            try {
+                const vehicle = await apiRequest(`/api/vehicles/${currentVehicleId}`);
+                const settings = JSON.parse(localStorage.getItem('userSettings') || '{"language":"en"}');
+                const lang = settings.language || 'en';
+                
+                if (lang === 'ro') {
+                    document.getElementById('vehicle-title').textContent = 
+                        `${vehicle.year} ${vehicle.make} ${vehicle.model} - Reparatii`;
+                } else {
+                    document.getElementById('vehicle-title').textContent = 
+                        `${vehicle.year} ${vehicle.make} ${vehicle.model} - Repairs`;
+                }
+            } catch (error) {
+                console.error('Failed to load vehicle info:', error);
+            }
+        }
+        
+        function navigateToVehicle() {
+            if (currentVehicleId) {
+                window.location.href = `/vehicle-detail?id=${currentVehicleId}`;
+            } else {
+                window.location.href = '/dashboard';
+            }
+        }
+        
+        async function loadRepairs() {
+            try {
+                const records = await apiRequest(`/api/vehicles/${currentVehicleId}/service-records`);
+                const repairs = records.filter(r => r.category === 'Repair');
+                displayRepairs(repairs);
+            } catch (error) {
+                console.error('Failed to load repairs:', error);
+            }
+        }
+        
+        function displayRepairs(repairs) {
+            const tbody = document.getElementById('repairs-tbody');
+            if (!tbody) return;
+            
+            const settings = JSON.parse(localStorage.getItem('userSettings') || '{"currency":"GBP"}');
+            const currency = settings.currency || 'GBP';
+            
+            if (repairs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No repairs recorded</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = repairs.map(r => `
+                <tr>
+                    <td>${formatDate(r.date)}</td>
+                    <td>${r.odometer.toLocaleString()}</td>
+                    <td>${r.description}</td>
+                    <td>${formatCurrency(r.cost, currency)}</td>
+                    <td>${r.notes || ''}</td>
+                    <td>${r.document_path ? `<a href="/api/attachments/download?path=${encodeURIComponent(r.document_path)}" class="btn" style="padding: 5px 10px; font-size: 12px;">Download</a>` : 'None'}</td>
+                </tr>
+            `).join('');
+        }
+        
+        document.getElementById('add-repair-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            let attachmentPath = null;
+            const attachmentFile = document.getElementById('repair-attachment').files[0];
+            
+            if (attachmentFile) {
+                const formData = new FormData();
+                formData.append('attachment', attachmentFile);
+                
+                try {
+                    const response = await fetch('/api/upload/attachment', {
+                        method: 'POST',
+                        credentials: 'include',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    attachmentPath = data.file_path;
+                } catch (error) {
+                    console.error('Attachment upload failed:', error);
+                }
+            }
+            
+            const formData = {
+                date: document.getElementById('repair-date').value,
+                odometer: parseInt(document.getElementById('repair-odometer').value),
+                description: document.getElementById('repair-description').value,
+                category: 'Repair',
+                cost: parseFloat(document.getElementById('repair-cost').value) || 0,
+                notes: document.getElementById('repair-notes').value || null,
+                document_path: attachmentPath
+            };
+            
+            try {
+                await apiRequest(`/api/vehicles/${currentVehicleId}/service-records`, {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+                closeModal('add-repair-modal');
+                await loadRepairs();
+                document.getElementById('add-repair-form').reset();
+            } catch (error) {
+                alert('Failed to add repair: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

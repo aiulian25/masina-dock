@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taxes - Masina-Dock</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="/static/images/logo.svg" alt="Masina-Dock">
+            <h1>Masina-Dock</h1>
+        </div>
+        <nav>
+            <a href="/dashboard" data-translate="dashboard">Dashboard</a>
+            <a href="#" onclick="navigateToVehicle(); return false;" data-translate="overview">Overview</a>
+            <a href="/service-records" data-translate="service_records">Service Records</a>
+            <a href="/repairs" data-translate="repairs">Repairs</a>
+            <a href="/fuel" data-translate="fuel">Fuel</a>
+            <a href="/taxes" class="active" data-translate="taxes">Taxes</a>
+            <a href="/notes" data-translate="notes">Notes</a>
+            <a href="/reminders" data-translate="reminders">Reminders</a>
+            <button class="theme-toggle" onclick="toggleTheme()" data-translate="toggle_theme">Toggle Theme</button>
+            <button class="btn btn-danger" onclick="logout()" data-translate="logout">Logout</button>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 id="vehicle-title" data-translate="taxes">Tax Records</h2>
+            <button class="btn" onclick="navigateToVehicle()" data-translate="back_to_vehicle">Back to Vehicle</button>
+        </div>
+        
+        <button class="btn btn-success" onclick="showModal('add-tax-modal')" data-translate="add_tax_record">+ Add Tax Record</button>
+        
+        <h3 style="margin-top: 30px;">Recurring Expenses</h3>
+        <div id="recurring-expenses-container" class="vehicle-grid" style="margin-bottom: 30px;"></div>
+        
+        <h3>Tax History</h3>
+        <div class="card" style="margin-top: 20px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th data-translate="date">Date</th>
+                        <th data-translate="type">Type</th>
+                        <th data-translate="amount">Amount</th>
+                        <th data-translate="notes">Notes</th>
+                        <th data-translate="attachment">Attachment</th>
+                    </tr>
+                </thead>
+                <tbody id="taxes-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div id="add-tax-modal" class="modal">
+        <div class="modal-content">
+            <h2 data-translate="add_tax_record">Add Tax Record</h2>
+            <form id="add-tax-form" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="tax-date" data-translate="date">Date</label>
+                    <input type="date" id="tax-date" name="date" required>
+                </div>
+                <div class="form-group">
+                    <label for="tax-type" data-translate="type">Type</label>
+                    <select id="tax-type" name="type">
+                        <option value="Registration" data-translate="registration">Registration</option>
+                        <option value="License" data-translate="license">Licence</option>
+                        <option value="Road Tax" data-translate="property_tax">Road Tax</option>
+                        <option value="Insurance" data-translate="insurance">Insurance</option>
+                        <option value="MOT" data-translate="inspection">MOT</option>
+                        <option value="Other" data-translate="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="tax-amount" data-translate="amount">Amount</label>
+                    <input type="number" id="tax-amount" name="amount" step="0.01" min="0" required>
+                </div>
+                <div class="form-group" style="display: flex; align-items: center;">
+                    <input type="checkbox" id="tax-recurring" name="recurring" style="margin: 0; width: auto;">
+                    <label for="tax-recurring" style="margin: 0 0 0 8px; cursor: pointer;">
+                        <span data-translate="recurring">Recurring Expense</span>
+                    </label>
+                </div>
+                <div id="recurring-options" style="display: none;">
+                    <div class="form-group">
+                        <label for="tax-frequency" data-translate="type">Frequency</label>
+                        <select id="tax-frequency" name="frequency">
+                            <option value="monthly" data-translate="monthly">Monthly</option>
+                            <option value="quarterly" data-translate="quarterly">Quarterly</option>
+                            <option value="yearly" data-translate="yearly">Yearly</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="tax-notes" data-translate="notes">Notes</label>
+                    <textarea id="tax-notes" name="notes" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="tax-attachment" data-translate="optional">Document (Optional)</label>
+                    <input type="file" id="tax-attachment" name="attachment" accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx">
+                    <small data-translate="supported_files">Supported: PDF, Images, Text, Word</small>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" data-translate="add_record">Add Record</button>
+                    <button type="button" class="btn" onclick="closeModal('add-tax-modal')" data-translate="cancel">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="/static/js/translations.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        let currentVehicleId = null;
+        let taxRecords = [];
+        let recurringExpenses = [];
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentVehicleId = getSelectedVehicle();
+            
+            if (!currentVehicleId) {
+                alert('Please select a vehicle from the dashboard.');
+                window.location.href = '/dashboard';
+                return;
+            }
+            
+            await loadVehicleInfo();
+            await loadRecurringExpenses();
+            await loadTaxesForVehicle(currentVehicleId);
+            
+            setTimeout(() => {
+                translatePage();
+            }, 200);
+            
+            document.getElementById('tax-recurring').addEventListener('change', function() {
+                document.getElementById('recurring-options').style.display = 
+                    this.checked ? 'block' : 'none';
+            });
+        });
+        
+        async function loadVehicleInfo() {
+            try {
+                const vehicle = await apiRequest(`/api/vehicles/${currentVehicleId}`);
+                const settings = JSON.parse(localStorage.getItem('userSettings') || '{"language":"en"}');
+                const lang = settings.language || 'en';
+                
+                if (lang === 'ro') {
+                    document.getElementById('vehicle-title').textContent = 
+                        `${vehicle.year} ${vehicle.make} ${vehicle.model} - Taxe`;
+                } else {
+                    document.getElementById('vehicle-title').textContent = 
+                        `${vehicle.year} ${vehicle.make} ${vehicle.model} - Taxes`;
+                }
+            } catch (error) {
+                console.error('Failed to load vehicle info:', error);
+            }
+        }
+        
+        function navigateToVehicle() {
+            if (currentVehicleId) {
+                window.location.href = `/vehicle-detail?id=${currentVehicleId}`;
+            } else {
+                window.location.href = '/dashboard';
+            }
+        }
+        
+        async function loadRecurringExpenses() {
+            try {
+                const expenses = await apiRequest(`/api/vehicles/${currentVehicleId}/recurring-expenses`);
+                recurringExpenses = expenses;
+                displayRecurringExpenses(expenses);
+            } catch (error) {
+                console.error('Failed to load recurring expenses:', error);
+            }
+        }
+        
+        function displayRecurringExpenses(expenses) {
+            const container = document.getElementById('recurring-expenses-container');
+            if (!container) return;
+            
+            if (expenses.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary);">No recurring expenses set up.</p>';
+                return;
+            }
+            
+            container.innerHTML = expenses.map(e => `
+                <div class="card" style="padding: 20px;">
+                    <h3>${e.description}</h3>
+                    <p><strong>Type:</strong> ${e.expense_type}</p>
+                    <p><strong>Amount:</strong> ${formatCurrency(e.amount)}</p>
+                    <p><strong>Frequency:</strong> ${e.frequency}</p>
+                    <p><strong>Next Due:</strong> ${formatDate(e.next_due_date)}</p>
+                    <p style="color: var(--text-secondary); font-size: 14px;">${e.notes || ''}</p>
+                    <button class="btn btn-danger" onclick="cancelRecurringExpense(${e.id})" style="margin-top: 10px;">
+                        Cancel Recurring
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        async function cancelRecurringExpense(expenseId) {
+
+        async function editRecurringExpense(expenseId) {
+            try {
+                const expense = await apiRequest(`/api/vehicles/${currentVehicleId}/recurring-expenses/${expenseId}`);
+                const expense_type = prompt('Expense Type:', expense.expense_type);
+                if (!expense_type) return;
+                const description = prompt('Description:', expense.description);
+                if (!description) return;
+                const amount = prompt('Amount:', expense.amount);
+                if (!amount) return;
+                const frequency = prompt('Frequency (monthly/yearly):', expense.frequency);
+                const notes = prompt('Notes:', expense.notes || '');
+                
+                await apiRequest(`/api/vehicles/${currentVehicleId}/recurring-expenses/${expenseId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ expense_type, description, amount: parseFloat(amount), frequency, notes })
+                });
+                alert('Tax/Expense updated successfully');
+                await loadRecurringExpenses();
+            } catch (error) {
+                alert('Failed to update tax/expense: ' + error.message);
+            }
+        }
+            if (!confirm('Are you sure you want to cancel this recurring expense?')) {
+                return;
+            }
+            
+            try {
+                await apiRequest(`/api/vehicles/${currentVehicleId}/recurring-expenses/${expenseId}`, {
+                    method: 'DELETE'
+                });
+                alert('Recurring expense cancelled successfully.');
+                await loadRecurringExpenses();
+            } catch (error) {
+                alert('Failed to cancel recurring expense: ' + error.message);
+            }
+        }
+        
+        async function loadTaxesForVehicle(vehicleId) {
+            const records = await apiRequest(`/api/vehicles/${vehicleId}/service-records`);
+            taxRecords = records.filter(r => r.category === 'Tax');
+            
+            const tbody = document.getElementById('taxes-tbody');
+            const settings = JSON.parse(localStorage.getItem('userSettings') || '{"currency":"GBP"}');
+            const currency = settings.currency || 'GBP';
+            
+            tbody.innerHTML = taxRecords.map(r => `
+                <tr>
+                    <td>${formatDate(r.date)}</td>
+                    <td>${r.description}</td>
+                    <td>${formatCurrency(r.cost, currency)}</td>
+                    <td>${r.notes || ''}</td>
+                    <td>${r.document_path ? `<a href="/api/attachments/download?path=${encodeURIComponent(r.document_path)}" class="btn" style="padding: 5px 10px; font-size: 12px;">Download</a>` : 'None'}</td>
+                </tr>
+            `).join('');
+        }
+        
+        document.getElementById('add-tax-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            let attachmentPath = null;
+            const attachmentFile = document.getElementById('tax-attachment').files[0];
+            
+            if (attachmentFile) {
+                const formData = new FormData();
+                formData.append('attachment', attachmentFile);
+                
+                try {
+                    const response = await fetch('/api/upload/attachment', {
+                        method: 'POST',
+                        credentials: 'include',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    attachmentPath = data.file_path;
+                } catch (error) {
+                    console.error('Attachment upload failed:', error);
+                }
+            }
+            
+            const taxType = document.getElementById('tax-type').value;
+            const isRecurring = document.getElementById('tax-recurring').checked;
+            
+            if (isRecurring && (taxType === 'Road Tax' || taxType === 'Insurance')) {
+                const recurringData = {
+                    expense_type: taxType,
+                    description: taxType,
+                    amount: parseFloat(document.getElementById('tax-amount').value),
+                    frequency: document.getElementById('tax-frequency').value,
+                    start_date: document.getElementById('tax-date').value,
+                    notes: document.getElementById('tax-notes').value || null
+                };
+                
+                try {
+                    await apiRequest(`/api/vehicles/${currentVehicleId}/recurring-expenses`, {
+                        method: 'POST',
+                        body: JSON.stringify(recurringData)
+                    });
+                    await loadRecurringExpenses();
+                } catch (error) {
+                    alert('Failed to add recurring expense: ' + error.message);
+                }
+            }
+            
+            const formData = {
+                date: document.getElementById('tax-date').value,
+                odometer: 0,
+                description: taxType,
+                category: 'Tax',
+                cost: parseFloat(document.getElementById('tax-amount').value),
+                notes: document.getElementById('tax-notes').value || null,
+                document_path: attachmentPath
+            };
+            
+            try {
+                await apiRequest(`/api/vehicles/${currentVehicleId}/service-records`, {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+                closeModal('add-tax-modal');
+                await loadTaxesForVehicle(currentVehicleId);
+                document.getElementById('add-tax-form').reset();
+                document.getElementById('recurring-options').style.display = 'none';
+            } catch (error) {
+                alert('Failed to add tax record: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
